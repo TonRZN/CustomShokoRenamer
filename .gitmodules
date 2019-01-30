@@ -1,4 +1,4 @@
 [submodule "ShokoServer"]
 	path = ShokoServer
 	url =  https://github.com/ShokoAnime/ShokoServer.git
-	branch = master
+	branch = v3.9hotfixes
