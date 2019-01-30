@@ -2,7 +2,7 @@
 using Shoko.Server.Models;
 using Shoko.Server.Renamer;
 
-namespace Renamer.Cazzar
+namespace Renamer.TonRZN
 {
     [Renamer("NoSpaces", Description = "Renamer that doesn't use spaces")]
     class NoSpaceRenamer : IRenamer
