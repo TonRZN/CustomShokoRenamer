@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using Shoko.Commons.Extensions;
 using Shoko.Models.Enums;
