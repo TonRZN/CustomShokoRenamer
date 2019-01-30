@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using Shoko.Commons.Extensions;
 using Shoko.Models.Enums;
@@ -7,13 +7,17 @@ using Shoko.Server.Models;
 using Shoko.Server.Renamer;
 using Shoko.Server.Repositories;
 using Shoko.Server;
+using System.IO;
+using NutzCode.CloudFileSystem;
+using System.Linq;
 
-namespace Renamer.Cazzar
+namespace Renamer.TonRZN
 {
 
-    [Renamer("CazzarRenamer", Description = "Cazzar's Custom Renamer")]
+    [Renamer("TonRZNRenamer", Description = "TonRZN's Custom Renamer")]
     public class MyRenamer : IRenamer
     {
+
         public string GetFileName(SVR_VideoLocal_Place video) => GetFileName(video.VideoLocal);
 
         public string GetFileName(SVR_VideoLocal video)
@@ -30,7 +34,7 @@ namespace Renamer.Cazzar
             name.Append($" {anime.PreferredTitle}");
             if (anime.AnimeType != (int)AnimeType.Movie)
             {
-                string prefix = "";
+                string prefix = String.Empty;
 
                 if (episode.GetEpisodeTypeEnum() == EpisodeType.Credits) prefix = "C";
                 if (episode.GetEpisodeTypeEnum() == EpisodeType.Other) prefix = "O";
@@ -46,6 +50,7 @@ namespace Renamer.Cazzar
                 name.Append($" - {prefix}{PadNumberTo(episode.EpisodeNumber, epCount)}");
             }
             name.Append($" ({video.VideoResolution}");
+
             if (file.File_Source != null &&
                 (file.File_Source.Equals("DVD", StringComparison.InvariantCultureIgnoreCase) ||
                  file.File_Source.Equals("Blu-ray", StringComparison.InvariantCultureIgnoreCase)))
@@ -56,7 +61,8 @@ namespace Renamer.Cazzar
 
             if (video.VideoBitDepth == "10")
                 name.Append($" {video.VideoBitDepth}bit");
-            name.Append(')');
+
+            name.Append(")");
 
             if (file.IsCensored != 0) name.Append(" [CEN]");
 
@@ -73,16 +79,21 @@ namespace Renamer.Cazzar
 
         public (ImportFolder dest, string folder) GetDestinationFolder(SVR_VideoLocal_Place video)
         {
-            var anime = RepoFactory.AniDB_Anime.GetByAnimeID(video.VideoLocal.GetAnimeEpisodes()[0].AniDB_Episode.AnimeID);
-            bool IsPorn = anime.Restricted > 0;
-            var location = "/anime/";
-            if (anime.GetAnimeTypeEnum() == AnimeType.Movie) location = "/movies/";
-            if (IsPorn) location = "/porn/";
+                if (!(video?.ImportFolder?.FileSystem?.Resolve(video.FullServerPath)?.Result is IFile sourceFile))
+                    return (null, "File is null");
 
+                ImportFolder destFolder = RepoFactory.ImportFolder.GetAll().FirstOrDefault(a => a.FolderIsDropDestination);
 
-            ImportFolder dest = RepoFactory.ImportFolder.GetByImportLocation(location);
+                SVR_AnimeSeries series = video.VideoLocal?.GetAnimeEpisodes().FirstOrDefault()?.GetAnimeSeries();
 
-            return (dest, Utils.ReplaceInvalidFolderNameCharacters(anime.PreferredTitle));
+                if (series == null) return (null, "Series is null");
+                string name = Utils.ReplaceInvalidFolderNameCharacters(series.GetSeriesName());
+                if (string.IsNullOrEmpty(name)) return (null, "Unable to get series name");
+
+            //string firstLetter = name.FirstOrDefault(char.IsLetter).ToString() != "\0" ? name.FirstOrDefault(char.IsLetter).ToString() : "#";
+            string firstLetter = !Path.GetInvalidFileNameChars().Contains(name.FirstOrDefault(char.IsLetter)) ? name.FirstOrDefault(char.IsLetter).ToString() : "#";
+            return (destFolder, Path.Combine(firstLetter, name));
+            
         }
     }
 }
