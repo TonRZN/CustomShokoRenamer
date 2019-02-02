@@ -7,6 +7,7 @@ using Shoko.Server.Models;
 using Shoko.Server.Renamer;
 using Shoko.Server.Repositories;
 using Shoko.Server;
+using System.Linq;
 
 namespace Renamer.TonRZN
 {
@@ -75,12 +76,13 @@ namespace Renamer.TonRZN
         {
             var anime = RepoFactory.AniDB_Anime.GetByAnimeID(video.VideoLocal.GetAnimeEpisodes()[0].AniDB_Episode.AnimeID);
             bool IsPorn = anime.Restricted > 0;
-            var location = "/anime/";
-            if (anime.GetAnimeTypeEnum() == AnimeType.Movie) location = "/movies/";
-            if (IsPorn) location = "/porn/";
+            var location = "anime";
+            if (anime.GetAnimeTypeEnum() == AnimeType.Movie) location = "movies";
+            if (IsPorn) location = "porn";
 
 
-            ImportFolder dest = RepoFactory.ImportFolder.GetByImportLocation(location);
+            //ImportFolder dest = RepoFactory.ImportFolder.GetByImportLocation(location);
+            ImportFolder dest = RepoFactory.ImportFolder.GetAll().FirstOrDefault(a => a.FolderIsDropDestination);
 
             return (dest, Utils.ReplaceInvalidFolderNameCharacters(anime.PreferredTitle));
         }

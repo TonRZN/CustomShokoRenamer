@@ -89,15 +89,29 @@ namespace Renamer.TonRZN
 
             ImportFolder destFolder = RepoFactory.ImportFolder.GetAll().FirstOrDefault(a => a.FolderIsDropDestination);
 
-                SVR_AnimeSeries series = video.VideoLocal?.GetAnimeEpisodes().FirstOrDefault()?.GetAnimeSeries();
+            if (destFolder == null)
+                return (null, "Drop destination not found");
 
-                if (series == null) return (null, "Series is null");
-                string name = Utils.ReplaceInvalidFolderNameCharacters(series.GetSeriesName());
-                if (string.IsNullOrEmpty(name)) return (null, "Unable to get series name");
+            var anime = RepoFactory.AniDB_Anime.GetByAnimeID(video.VideoLocal.GetAnimeEpisodes()[0].AniDB_Episode.AnimeID);
+            SVR_AnimeSeries series = video.VideoLocal?.GetAnimeEpisodes().FirstOrDefault()?.GetAnimeSeries();
 
-            //string firstLetter = name.FirstOrDefault(char.IsLetter).ToString() != "\0" ? name.FirstOrDefault(char.IsLetter).ToString() : "#";
+            bool isHentai = anime.Restricted > 0;
+
+            if (series == null) return (null, "Series is null");
+            string name = Utils.ReplaceInvalidFolderNameCharacters(series.GetSeriesName());
+            if (string.IsNullOrEmpty(name)) return (null, "Unable to get series name");
+
+            string location = "Series";
+
+            if (isHentai) location = "Hentai";
+
+            if (anime.GetAnimeTypeEnum() == AnimeType.Movie) location = "Movies";
+
+            //string firstLetter = name.FirstOrDefault(char.IsLetter).ToString() != "\0" ? name.FirstOrDefault(char.IsLetter).ToString() : "#";  
             string firstLetter = !Path.GetInvalidFileNameChars().Contains(name.FirstOrDefault(char.IsLetter)) ? name.FirstOrDefault(char.IsLetter).ToString() : "#";
-            return (destFolder, Path.Combine(firstLetter, name));
+            string folder = Path.Combine(firstLetter, name);
+
+            return (destFolder, Path.Combine(location, folder));
             
         }
     }
